@@ -18,6 +18,8 @@ import threading
 import time
 from pathlib import Path
 
+import requests
+
 import edge_tts
 import openai
 from aiohttp import ClientSession, ClientTimeout
@@ -81,8 +83,9 @@ class MiGPT:
         self.polling_event = asyncio.Event()
         self.last_record = asyncio.Queue(1)
         self.temp_dir = None
-        if self.config.enable_edge_tts:
+        if self.config.enable_edge_tts or self.config.enable_openai_tts:
             self.temp_dir = tempfile.TemporaryDirectory(prefix="xiaogpt-tts-")
+
 
         # setup logger
         self.log = logging.getLogger("xiaogpt")
@@ -118,7 +121,7 @@ class MiGPT:
         await self._init_data_hardware()
         session.cookie_jar.update_cookies(self.get_cookie())
         self.cookie_jar = session.cookie_jar
-        if self.config.enable_edge_tts and self.config.localhost:
+        if (self.config.enable_edge_tts or self.config.enable_openai_tts) and self.config.localhost:
             self.start_http_server()
 
     async def login_miboy(self, session):
@@ -331,18 +334,34 @@ class MiGPT:
             return (await resp.text()).strip()
 
     async def text2mp3(self, text, tts_lang):
-        communicate = edge_tts.Communicate(text, tts_lang)
-        duration = 0
-        stream = io.BytesIO()
-        async for chunk in communicate.stream():
-            if chunk["type"] == "audio":
-                stream.write(chunk["data"])
-            elif chunk["type"] == "WordBoundary":
-                duration = (chunk["offset"] + chunk["duration"]) / 1e7
-        if duration == 0:
-            raise RuntimeError(f"Failed to get tts from edge with voice={tts_lang}")
-        stream.seek(0)
-        return (await self.get_file_url(stream), duration)
+        if self.config.enable_openai_tts:
+            print(f"OpenAI TTS with voice={self.config.openai_tts_voice}")
+            headers = {
+                "Authorization": f"Bearer {self.config.openai_key}",
+                "Content-Type": "application/json"
+            }
+            data = {
+                "model": "tts-1",
+                "input": text,
+                "voice": f"{self.config.openai_tts_voice}",
+            }
+            response = requests.post(f"{self.config.api_base}/audio/speech", headers=headers, json=data)
+            response.raise_for_status()
+            stream = io.BytesIO(response.content)
+            return (await self.get_file_url(stream), 15)
+        else:
+            communicate = edge_tts.Communicate(text, tts_lang)
+            duration = 0
+            stream = io.BytesIO()
+            async for chunk in communicate.stream():
+                if chunk["type"] == "audio":
+                    stream.write(chunk["data"])
+                elif chunk["type"] == "WordBoundary":
+                    duration = (chunk["offset"] + chunk["duration"]) / 1e7
+            if duration == 0:
+                raise RuntimeError(f"Failed to get tts from edge with voice={tts_lang}")
+            stream.seek(0)
+            return (await self.get_file_url(stream), duration)
 
     async def edge_tts(self, text_stream, tts_lang):
         async def run_tts(text_stream, tts_lang, queue):
@@ -383,7 +402,8 @@ class MiGPT:
                 if self.config.bot == "glm":
                     answer = self._chatbot.ask(query, **self.config.gpt_options)
                 else:
-                    answer = await self.chatbot.ask(query, **self.config.gpt_options)
+                    kwargs = {**self.config.gpt_options,'model': self.config.openai_llm_model}
+                    answer = await self.chatbot.ask(query, **kwargs)
                 message = self._normalize(answer) if answer else ""
                 yield message
                 return
@@ -504,9 +524,12 @@ class MiGPT:
                     print("小爱没回")
                 print(f"以下是 {ask_name} 的回答: ", end="")
                 try:
-                    if not self.config.enable_edge_tts:
+                    if self.config.enable_edge_tts:
                         async for message in self.ask_gpt(query):
                             await self.do_tts(message, wait_for_finish=True)
+                    elif self.config.enable_openai_tts:
+                        print(f"使用openai tts {self.config.openai_tts_voice}")
+                        await self.edge_tts(self.ask_gpt(query), '')
                     else:
                         tts_lang = (
                             find_key_by_partial_string(EDGE_TTS_DICT, query)
