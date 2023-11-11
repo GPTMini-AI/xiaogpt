@@ -87,6 +87,26 @@ def main():
         default=None,
         help="if use edge tts",
     )
+    parser.add_argument(
+        "--enable_openai_tts",
+        dest="enable_openai_tts",
+        action="store_true",
+        default=False,
+        help="if use openai tts",
+    )
+    parser.add_argument(
+        "--openai_tts_voice",
+        dest="openai_tts_voice",
+        help="open tts voice，( alloy, echo, fable, onyx, nova,  shimmer )",
+        default="alloy",
+    )
+    # model
+    parser.add_argument(
+        "--openai_llm_model",
+        dest="openai_llm_model",
+        help="openai llm model ，such as gpt-3.5-turbo-0613	,gpt-4-1106-preview	default: gpt-3.5-turbo-1106",
+        default="gpt-3.5-turbo-1106",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--use_gpt3",
@@ -168,6 +188,7 @@ def main():
     )
 
     options = parser.parse_args()
+    print(options)
     if options.bot in ["glm", "bard"] and options.stream:
         raise Exception("For now ChatGLM do not support stream")
     config = Config.from_options(options)
