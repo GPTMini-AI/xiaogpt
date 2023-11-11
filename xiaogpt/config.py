@@ -79,6 +79,9 @@ class Config:
     end_conversation: str = "结束持续对话"
     stream: bool = False
     enable_edge_tts: bool = False
+    enable_openai_tts: bool = False
+    openai_tts_voice: str = "alloy"
+    openai_llm_model: str = "gpt-3.5-turbo-1106"
     localhost: bool = True
     edge_tts_voice: str = "zh-CN-XiaoxiaoNeural"
     gpt_options: dict[str, Any] = field(default_factory=dict)
