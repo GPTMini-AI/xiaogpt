@@ -10,6 +10,7 @@ https://user-images.githubusercontent.com/15976103/226803357-72f87a41-a15b-409e-
 
 ```shell
 git clone https://github.com/GPTMini-AI/xiaogpt.git
+cd xiaogpt/
 pip install -r requirements.txt 
 export OPENAI_API_KEY=${your_api_key}
 
