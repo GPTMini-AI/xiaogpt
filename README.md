@@ -41,6 +41,20 @@ Play ChatGPT and other LLM with Xiaomi AI Speaker
 3. 能正常联网的环境或 proxy
 4. python3.8+
 
+## BeiFeng Change
+
+```shell
+--enable_openai_tts --openai_tts_voice nova --openai_llm_model gpt-4-1106-preview
+```
+
+增加openai tts能力，可自定义openai llm模型
+
+```shell
+export OPENAI_API_KEY=${your_api_key}
+
+python xiaogpt.py --hardware LX06 --api_base 'https://openai.gptproxy.pro/v1' --mute_xiaoai  --use_chatgpt_api --enable_openai_tts --openai_tts_voice nova --openai_llm_model gpt-4-1106-preview
+```
+
 ## 使用
 
 - `pip install -U --force-reinstall xiaogpt`
