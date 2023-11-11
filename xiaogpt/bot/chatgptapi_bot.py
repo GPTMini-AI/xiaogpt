@@ -45,6 +45,7 @@ class ChatGPTBot(ChatHistoryMixin, BaseBot):
         ms = self.get_messages()
         ms.append({"role": "user", "content": f"{query}"})
         kwargs = {**self.default_options, **options}
+        print(f'call open ai {kwargs}')
         try:
             completion = await openai.ChatCompletion.acreate(messages=ms, **kwargs)
         except Exception as e:
