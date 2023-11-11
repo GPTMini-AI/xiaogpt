@@ -6,6 +6,16 @@
 
 https://user-images.githubusercontent.com/15976103/226803357-72f87a41-a15b-409e-94f5-e2d262eecd53.mp4
 
+## 懒人专用
+
+```shell
+git clone https://github.com/GPTMini-AI/xiaogpt.git
+pip install -r requirements.txt 
+export OPENAI_API_KEY=${your_api_key}
+
+python xiaogpt.py --hardware LX06 --api_base 'https://openai.gptproxy.pro/v1' --mute_xiaoai  --use_chatgpt_api --enable_openai_tts --openai_tts_voice nova --openai_llm_model gpt-4-1106-preview
+
+```
 
 Play ChatGPT and other LLM with Xiaomi AI Speaker
 
